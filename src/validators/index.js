@@ -16,7 +16,11 @@ const userRegisterValidator = () => {
       .withMessage("Username must be in lower case")
       .isLength({ min: 3 })
       .withMessage("Username must be at least 3 characters long"),
-    body("password").trim().notEmpty().withMessage("Password is required"),
+    body("password")
+      .isLength({ min: 6 })
+      .withMessage("Password must atleast be 6 characters long.")
+      .matches(/^\S+$/)
+      .withMessage("Password must not contain spaces"),
     body("fullName").optional().trim(),
   ];
 };
@@ -38,8 +42,19 @@ const userForgotPasswordValidator = () => {
   ];
 };
 
+const userResetForgotPasswordValidator = () => {
+  return [
+    body("newPassword")
+      .isLength({ min: 6 })
+      .withMessage("Password must be atleast 6 characters long.")
+      .matches(/^\S+$/)
+      .withMessage("Password must not contain spaces"),
+  ];
+};
+
 export {
   userRegisterValidator,
   userLoginValidator,
   userForgotPasswordValidator,
+  userResetForgotPasswordValidator,
 };
