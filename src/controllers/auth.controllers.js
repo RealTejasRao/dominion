@@ -8,7 +8,7 @@ import {
   sendEmail,
 } from "../utils/mail.js";
 import jwt from "jsonwebtoken";
-import crypto from "crypto"
+import crypto from "crypto";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -61,8 +61,6 @@ const registerUser = asyncHandler(async (req, res) => {
       `${process.env.FRONTEND_URL}/verify-email/${unHashedToken}`,
     ),
   });
-
-
 
   const createdUser = await User.findById(user._id).select(
     "-password -refreshToken -emailVerificationToken -emailVerificationExpiry",
@@ -117,7 +115,6 @@ const login = asyncHandler(async (req, res) => {
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   };
 
-
   return res
     .status(200)
     .cookie("accessToken", accessToken, options)
@@ -158,7 +155,6 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged out"));
 });
 
-
 const getCurrentUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
@@ -189,7 +185,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
   user.emailVerificationToken = undefined;
   user.emailVerificationExpiry = undefined;
   user.isEmailVerified = true;
-  user.refreshToken="";
+  user.refreshToken = "";
   await user.save({ validateBeforeSave: false });
 
   return res.status(200).json(
@@ -203,5 +199,46 @@ const verifyEmail = asyncHandler(async (req, res) => {
   );
 });
 
+const resendEmailVerification = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user?._id);
 
-export { registerUser, login, logoutUser, getCurrentUser, verifyEmail};
+  if (!user) {
+    throw new ApiError(404, "User does not exist");
+  }
+  if (user.isEmailVerified) {
+    throw new ApiError(409, "Email is already verified");
+  }
+
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpiry = undefined;
+
+  const { unHashedToken, hashedToken, tokenExpiry } =
+    user.generateTemporaryToken();
+
+  user.emailVerificationToken = hashedToken;
+  user.emailVerificationExpiry = tokenExpiry;
+
+  await user.save({ validateBeforeSave: false });
+
+  await sendEmail({
+    email: user?.email,
+    subject: "Please verify your email",
+    mailgenContent: emailVerificationMailgenContent(
+      user.username,
+      `${process.env.FRONTEND_URL}/verify-email/${unHashedToken}`,
+    ),
+  });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Mail has been sent to your email ID"));
+});
+
+export {
+  registerUser,
+  login,
+  logoutUser,
+  getCurrentUser,
+  verifyEmail,
+  resendEmailVerification,
+};
