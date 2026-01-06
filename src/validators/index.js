@@ -52,9 +52,21 @@ const userResetForgotPasswordValidator = () => {
   ];
 };
 
+const userChangeCurrentPasswordValidator = () => {
+  return [
+    body("oldPassword").notEmpty().withMessage("Old password is required"),
+    body("newPassword")
+      .isLength({ min: 6 })
+      .withMessage("Password must be atleast 6 characters long.")
+      .matches(/^\S+$/)
+      .withMessage("Password must not contain spaces"),
+  ];
+};
+
 export {
   userRegisterValidator,
   userLoginValidator,
   userForgotPasswordValidator,
   userResetForgotPasswordValidator,
+  userChangeCurrentPasswordValidator,
 };
