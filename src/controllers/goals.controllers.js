@@ -125,7 +125,6 @@ const completeGoal = asyncHandler(async (req, res) => {
       },
     },
 
-
     { new: true },
   );
 
@@ -145,4 +144,26 @@ const completeGoal = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, responseGoals, "Updated Successfully"));
 });
 
-export { addGoal, getTodayGoals, completeGoal };
+const deleteGoal = asyncHandler(async (req, res) => {
+  const today = getTodayDate();
+
+  const { id: goalID } = req.params;
+
+  const goalToDelete = await Goal.findOneAndDelete({
+    _id: goalID,
+    user: req.user._id,
+    date: today,
+  });
+
+  if (!goalToDelete) {
+    throw new ApiError(404, "Goal was not found.");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, { id: goalToDelete._id }, "Deleted Successfully"),
+    );
+});
+
+export { addGoal, getTodayGoals, completeGoal, deleteGoal };

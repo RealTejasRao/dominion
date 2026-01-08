@@ -5,6 +5,7 @@ import { addGoal } from "../controllers/goals.controllers.js";
 import { userCreateGoalValidator } from "../validators/index.js";
 import { getTodayGoals } from "../controllers/goals.controllers.js";
 import { completeGoal } from "../controllers/goals.controllers.js";
+import { deleteGoal } from "../controllers/goals.controllers.js";
 
 const router = Router();
 
@@ -15,5 +16,6 @@ router
 router.route("/").get(verifyJWT, getTodayGoals);
 
 router.route("/:id/complete").patch(verifyJWT, completeGoal);
+router.route("/:id").delete(verifyJWT, deleteGoal);
 
 export default router;
