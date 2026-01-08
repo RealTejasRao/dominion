@@ -63,7 +63,7 @@ const userChangeCurrentPasswordValidator = () => {
   ];
 };
 
-const userCreateGoalValidator = () => {
+const userCreateUpdateGoalValidator = () => {
   return [
     body("title")
       .isLength({ min: 3 })
@@ -71,11 +71,13 @@ const userCreateGoalValidator = () => {
   ];
 };
 
+
 export {
   userRegisterValidator,
   userLoginValidator,
   userForgotPasswordValidator,
   userResetForgotPasswordValidator,
   userChangeCurrentPasswordValidator,
-  userCreateGoalValidator,
+  userCreateUpdateGoalValidator,
+
 };

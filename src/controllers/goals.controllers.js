@@ -166,4 +166,46 @@ const deleteGoal = asyncHandler(async (req, res) => {
     );
 });
 
-export { addGoal, getTodayGoals, completeGoal, deleteGoal };
+const updateGoal = asyncHandler(async (req, res) => {
+  const { title } = req.body;
+  const { id: goalID } = req.params;
+  const today = getTodayDate();
+
+  if (!title || title.trim().length < 3) {
+    throw new ApiError(400, "Goal title must be at least 3 characters long.");
+  }
+
+  const existingGoal = await Goal.findOne({
+    user: req.user._id,
+    date: today,
+    title: title.trim(),
+    _id: { $ne: goalID },
+  });
+
+  if (existingGoal) {
+    throw new ApiError(409, "A goal with this title already exists today.");
+  }
+
+  const updatedGoal = await Goal.findOneAndUpdate(
+    { _id: goalID, user: req.user._id, date: today },
+    { $set: { title: title.trim() } },
+    { new: true, runValidators: true },
+  );
+
+  if (!updatedGoal) {
+    throw new ApiError(404, "Goal not found or cannot be edited.");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        id: updatedGoal._id,
+        title: updatedGoal.title,
+      },
+      "Goal updated successfully.",
+    ),
+  );
+});
+
+export { addGoal, getTodayGoals, completeGoal, deleteGoal, updateGoal };
