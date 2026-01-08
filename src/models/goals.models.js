@@ -1,5 +1,5 @@
 import mongoose, { mongo, Schema } from "mongoose";
-import User from "./users.models";
+import User from "./users.models.js";
 
 const goalSchema = new Schema({
   user: {

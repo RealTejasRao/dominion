@@ -63,10 +63,19 @@ const userChangeCurrentPasswordValidator = () => {
   ];
 };
 
+const userCreateGoalValidator = () => {
+  return [
+    body("title")
+      .isLength({ min: 3 })
+      .withMessage("Goal title must contain atleast 3 characters."),
+  ];
+};
+
 export {
   userRegisterValidator,
   userLoginValidator,
   userForgotPasswordValidator,
   userResetForgotPasswordValidator,
   userChangeCurrentPasswordValidator,
+  userCreateGoalValidator,
 };

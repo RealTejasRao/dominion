@@ -11,8 +11,7 @@ app.use(express.urlencoded({ extended: true, limit: "16kb" })); //It lets Expres
 app.use(express.static("public")); // It exposes the public folder so browsers can directly access static files.
 
 // cookie-parser
-app.use(cookieParser())
-
+app.use(cookieParser());
 
 // cors config
 const allowedOrigins = process.env.CORS_ORIGIN
@@ -30,15 +29,14 @@ app.use(
 
 //import routes
 import healthCheckRouter from "./routes/healthcheck.routes.js";
-import authRouter from "./routes/auth.routes.js"
-
+import authRouter from "./routes/auth.routes.js";
+import goalRouter from "./routes/goals.routes.js";
 
 app.use("/api/v1/healthcheck", healthCheckRouter);
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/goal", goalRouter);
 
 app.use(errorHandler);
-
-
 
 app.get("/", (req, res) => {
   res.send("TEJAS RAO");
