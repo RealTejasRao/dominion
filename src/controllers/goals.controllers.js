@@ -97,4 +97,52 @@ const getTodayGoals = asyncHandler(async (req, res) => {
     );
 });
 
-export { addGoal, getTodayGoals };
+const completeGoal = asyncHandler(async (req, res) => {
+  const today = getTodayDate();
+
+  const { id: goalID } = req.params;
+
+  const goalToComplete = await Goal.findOne({
+    _id: goalID,
+    user: req.user._id,
+    date: today,
+  });
+
+  if (!goalToComplete) {
+    throw new ApiError(404, "This goal does not exists / Cannot be modified.");
+  }
+
+  const updatedGoal = await Goal.findOneAndUpdate(
+    {
+      _id: goalID,
+      user: req.user._id,
+      date: today,
+    },
+
+    {
+      $set: {
+        completed: !goalToComplete.completed,
+      },
+    },
+
+
+    { new: true },
+  );
+
+  if (!updatedGoal) {
+    throw new ApiError(404, "Goal update has failed.");
+  }
+
+  const responseGoals = {
+    id: updatedGoal._id,
+    completed: updatedGoal.completed,
+    date: updatedGoal.date,
+    createdAt: updatedGoal.createdAt,
+    updatedAt: updatedGoal.updatedAt,
+  };
+  return res
+    .status(200)
+    .json(new ApiResponse(200, responseGoals, "Updated Successfully"));
+});
+
+export { addGoal, getTodayGoals, completeGoal };
