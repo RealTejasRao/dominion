@@ -357,7 +357,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
   }
 
   user.password = newPassword;
-  user.refreshToken=""; //to revoke all sessions
+  user.refreshToken = ""; //to revoke all sessions
   await user.save({ validateBeforeSave: false });
 
   return res

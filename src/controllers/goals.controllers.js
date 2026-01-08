@@ -1,6 +1,7 @@
 import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { asyncHandler } from "../utils/async-handler.js";
+import { getTodayDate } from "../utils/getTodayDate.js";
 import Goal from "../models/goals.models.js";
 
 const addGoal = asyncHandler(async (req, res) => {
@@ -13,42 +14,87 @@ const addGoal = asyncHandler(async (req, res) => {
     );
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayDate();
 
-  const count = await Goal.countDocuments({
-    user: req.user._id,
-    date: today,
-  });
+  const session = await Goal.startSession();
+  session.startTransaction();
 
-  if (count >= 5) {
-    throw new ApiError(400, "Only 5 goals are allowed per day.");
+  try {
+    const count = await Goal.countDocuments(
+      {
+        user: req.user._id,
+        date: today,
+      },
+      { session },
+    );
+
+    if (count >= 5) {
+      throw new ApiError(400, "Only 5 goals are allowed per day.");
+    }
+
+    const existedGoal = await Goal.findOne(
+      {
+        user: req.user._id,
+        date: today,
+        title: title.trim(),
+      },
+      null,
+      { session },
+    );
+
+    if (existedGoal) {
+      throw new ApiError(409, "This goal already exists.");
+    }
+
+    const goal = await Goal.create(
+      [
+        {
+          user: req.user._id,
+          title: title.trim(),
+          date: today,
+        },
+      ],
+      { session },
+    );
+
+    await session.commitTransaction();
+
+    return res
+      .status(201)
+      .json(new ApiResponse(201, goal[0], "Goal added successfully."));
+  } catch (err) {
+    await session.abortTransaction();
+    throw err;
+  } finally {
+    session.endSession();
   }
-
-  const existedGoal = await Goal.findOne({
-    user: req.user._id,
-    date: today,
-    title: title.trim(),
-  });
-
-  if (existedGoal) {
-    throw new ApiError(409, "This goal already exists.");
-  }
-
-  const goal = await Goal.create({
-    user: req.user._id,
-    title: title.trim(),
-    date: today,
-  });
-
-  const createdGoal = await Goal.findById(goal._id);
-
-  if (!createdGoal) {
-    throw new ApiError(500, "Something went wrong while creating a new goal.");
-  }
-
-  return res
-    .status(201)
-    .json(new ApiResponse(201, goal, "Goal added successfully."));
 });
 
-export { addGoal };
+const getTodayGoals = asyncHandler(async (req, res) => {
+  const today = getTodayDate();
+
+  const goals = await Goal.find({
+    user: req.user._id,
+    date: today,
+  }).sort({ createdAt: 1 });
+
+  const responseGoals = goals.map((g) => ({
+    id: g._id,
+    title: g.title,
+    completed: g.completed,
+    date: g.date,
+    createdAt: g.createdAt,
+    updatedAt: g.updatedAt,
+  }));
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { goals: responseGoals },
+        "Today's goals listed successfully.",
+      ),
+    );
+});
+
+export { addGoal, getTodayGoals };
