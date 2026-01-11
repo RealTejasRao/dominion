@@ -31,10 +31,12 @@ app.use(
 import healthCheckRouter from "./routes/healthcheck.routes.js";
 import authRouter from "./routes/auth.routes.js";
 import goalRouter from "./routes/goals.routes.js";
+import deepworkRouter from "./routes/deepwork.routes.js";
 
 app.use("/api/v1/healthcheck", healthCheckRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/goal", goalRouter);
+app.use("/api/v1/deepwork", deepworkRouter);
 
 app.use(errorHandler);
 

@@ -1,8 +1,9 @@
 import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { asyncHandler } from "../utils/async-handler.js";
-import { getTodayDate } from "../utils/getTodayDate.js";
+import { getTodayDate } from "../utils/getTodayDateTime.js";
 import Goal from "../models/goals.models.js";
+import DailyCounter from "../models/dailycounters.models.js";
 
 const addGoal = asyncHandler(async (req, res) => {
   const { title } = req.body;
@@ -17,51 +18,52 @@ const addGoal = asyncHandler(async (req, res) => {
   const today = getTodayDate();
 
   const session = await Goal.startSession();
-  session.startTransaction();
 
   try {
-    const count = await Goal.countDocuments(
+    session.startTransaction();
+    const count = await DailyCounter.findOneAndUpdate(
       {
         user: req.user._id,
         date: today,
+        goalCount: { $lt: 5 },
       },
-      { session },
+      { $inc: { goalCount: 1 } },
+      { new: true, upsert: true, session },
     );
 
-    if (count >= 5) {
-      throw new ApiError(400, "Only 5 goals are allowed per day.");
+    if (!count) {
+      throw new ApiError(400, "Max 5 goals are allowed.");
     }
 
-    const existedGoal = await Goal.findOne(
-      {
-        user: req.user._id,
-        date: today,
-        title: title.trim(),
-      },
-      null,
-      { session },
-    );
-
-    if (existedGoal) {
-      throw new ApiError(409, "This goal already exists.");
+    let goal;
+    try {
+      [goal] = await Goal.create(
+        [
+          {
+            user: req.user._id,
+            title: title.trim(),
+            date: today,
+          },
+        ],
+        { session },
+      );
+    } catch (err) {
+      if (err.code === 11000) {
+        await DailyCounter.updateOne(
+          { user: req.user._id, date: today },
+          { $inc: { goalCount: -1 } },
+          { session },
+        );
+        throw new ApiError(409, "Goal already exists.");
+      }
+      throw err;
     }
-
-    const goal = await Goal.create(
-      [
-        {
-          user: req.user._id,
-          title: title.trim(),
-          date: today,
-        },
-      ],
-      { session },
-    );
 
     await session.commitTransaction();
 
     return res
       .status(201)
-      .json(new ApiResponse(201, goal[0], "Goal added successfully."));
+      .json(new ApiResponse(201, goal, "Goal added successfully."));
   } catch (err) {
     await session.abortTransaction();
     throw err;
@@ -73,10 +75,15 @@ const addGoal = asyncHandler(async (req, res) => {
 const getTodayGoals = asyncHandler(async (req, res) => {
   const today = getTodayDate();
 
-  const goals = await Goal.find({
-    user: req.user._id,
-    date: today,
-  }).sort({ createdAt: 1 });
+  const goals = await Goal.find(
+    {
+      user: req.user._id,
+      date: today,
+    },
+    { title: 1, completed: 1, date: 1, createdAt: 1, updatedAt: 1 },
+  )
+    .sort({ createdAt: 1 })
+    .lean();
 
   const responseGoals = goals.map((g) => ({
     id: g._id,
@@ -102,16 +109,6 @@ const completeGoal = asyncHandler(async (req, res) => {
 
   const { id: goalID } = req.params;
 
-  const goalToComplete = await Goal.findOne({
-    _id: goalID,
-    user: req.user._id,
-    date: today,
-  });
-
-  if (!goalToComplete) {
-    throw new ApiError(404, "This goal does not exists / Cannot be modified.");
-  }
-
   const updatedGoal = await Goal.findOneAndUpdate(
     {
       _id: goalID,
@@ -119,13 +116,15 @@ const completeGoal = asyncHandler(async (req, res) => {
       date: today,
     },
 
-    {
-      $set: {
-        completed: !goalToComplete.completed,
+    [
+      {
+        $set: {
+          completed: { $not: "$completed" },
+        },
       },
-    },
+    ],
 
-    { new: true },
+    { new: true, updatePipeline: true },
   );
 
   if (!updatedGoal) {
@@ -175,22 +174,20 @@ const updateGoal = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Goal title must be at least 3 characters long.");
   }
 
-  const existingGoal = await Goal.findOne({
-    user: req.user._id,
-    date: today,
-    title: title.trim(),
-    _id: { $ne: goalID },
-  });
+  let updatedGoal;
 
-  if (existingGoal) {
-    throw new ApiError(409, "A goal with this title already exists today.");
+  try {
+    updatedGoal = await Goal.findOneAndUpdate(
+      { _id: goalID, user: req.user._id, date: today },
+      { $set: { title: title.trim() } },
+      { new: true, runValidators: true },
+    );
+  } catch (err) {
+    if (err.code === 11000) {
+      throw new ApiError(409, "Goal cannot be found or cannot be edited.");
+    }
+    throw err;
   }
-
-  const updatedGoal = await Goal.findOneAndUpdate(
-    { _id: goalID, user: req.user._id, date: today },
-    { $set: { title: title.trim() } },
-    { new: true, runValidators: true },
-  );
 
   if (!updatedGoal) {
     throw new ApiError(404, "Goal not found or cannot be edited.");
