@@ -54,7 +54,7 @@ const endDeepwork = asyncHandler(async (req, res) => {
               {
                 $divide: [
                   {
-                    $subtract: [{ $literal: endTime }, "$startedAt"],
+                    $subtract: [endTime, "$startedAt"],
                   },
                   60000,
                 ],

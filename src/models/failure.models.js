@@ -22,7 +22,7 @@ const failureSchema= new Schema(
     }, {timestamps: true,},
 );
 
-failureSchema.index({user:1, isActive:1}, {unique:true});
+failureSchema.index({user:1, date:1}, {unique:true});
 
 const Failure= mongoose.model("Failure", failureSchema);
 export default Failure;
