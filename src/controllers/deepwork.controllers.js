@@ -137,7 +137,7 @@ const getWeeklyDeepworkSummary = asyncHandler(async (req, res) => {
       $group: {
         _id: "$date",
         dailyMinutes: { $sum: "$durationMinutes" },
-        dailySessions: { $sum: 1 },
+        dailySessions: { $sum: 1 }, 
       },
     },
     {
