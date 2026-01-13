@@ -33,12 +33,14 @@ import authRouter from "./routes/auth.routes.js";
 import goalRouter from "./routes/goals.routes.js";
 import deepworkRouter from "./routes/deepwork.routes.js";
 import failureRouter from "./routes/failure.routes.js";
+import weeklyreviewRouter from "./routes/weeklyreview.routes.js";
 
 app.use("/api/v1/healthcheck", healthCheckRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/goal", goalRouter);
 app.use("/api/v1/deepwork", deepworkRouter);
 app.use("/api/v1/failure", failureRouter);
+app.use("/api/v1/weeklyreview", weeklyreviewRouter);
 
 app.use(errorHandler);
 
