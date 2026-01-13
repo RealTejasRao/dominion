@@ -5,6 +5,7 @@ import { getTodayDate } from "../utils/getTodayDateTime.js";
 import Failure from "../models/failure.models.js";
 import Goal from "../models/goals.models.js";
 import Deepwork from "../models/deepwork.models.js";
+import { getWeekRange } from "../utils/getWeekRange.js";
 
 const markDayAsFailed = asyncHandler(async (req, res) => {
   const today = getTodayDate();
@@ -93,4 +94,33 @@ const markDayAsFailed = asyncHandler(async (req, res) => {
   }
 });
 
-export { markDayAsFailed };
+const getWeeklyFailures = asyncHandler(async (req, res) => {
+  const { start, end } = getWeekRange();
+
+  const failures = await Failure.find({
+    user: req.user._id,
+    date: { $gte: start, $lte: end },
+  })
+    .sort({ date: 1 })
+    .lean();
+
+  const response = failures.map((i) => ({
+    id: i._id,
+    date: i.date,
+    reason: i.reason,
+  }));
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        totalFailures: response.length,
+        failures: response,
+        weekRange: { start, end },
+      },
+      "Weekly failures fetched successfully.",
+    ),
+  );
+});
+
+export { markDayAsFailed, getWeeklyFailures };
