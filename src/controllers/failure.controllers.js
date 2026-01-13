@@ -123,4 +123,27 @@ const getWeeklyFailures = asyncHandler(async (req, res) => {
   );
 });
 
-export { markDayAsFailed, getWeeklyFailures };
+const getFailureHistory = asyncHandler(async (req, res) => {
+  const failures = await Failure.find({ user: req.user._id })
+    .sort({ date: -1 })
+    .lean();
+
+  const response = failures.map((f) => ({
+    id: f._id,
+    date: f.date,
+    reason: f.reason,
+  }));
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        totalFailures: response.length,
+        failures: response,
+      },
+      "Failure history fetched successfully.",
+    ),
+  );
+});
+
+export { markDayAsFailed, getWeeklyFailures, getFailureHistory };
