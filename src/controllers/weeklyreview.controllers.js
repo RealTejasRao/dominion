@@ -3,50 +3,19 @@ import { ApiResponse } from "../utils/api-response.js";
 import { ApiError } from "../utils/api-error.js";
 import { getWeekRange } from "../utils/getWeekRange.js";
 import WeekReview from "../models/weeklyreview.models.js";
-import Goal from "../models/goals.models.js";
-import Deepwork from "../models/deepwork.models.js";
-import Failure from "../models/failure.models.js";
+import { generateWeeklyReviewForUser } from "../services/weeklyreview.service.js";
+import { DateTime } from "luxon";
 
 const generateWeeklyReview = asyncHandler(async (req, res) => {
-  const { start, end } = getWeekRange();
+  const now = DateTime.now().setZone(req.user.timezone);
+  const lastWeek = now.minus({ weeks: 1 });
 
-  const goalsCompleted = await Goal.countDocuments({
-    user: req.user._id,
-    completed: true,
-    date: { $gte: start, $lt: end },
+  const { start, end } = getWeekRange(req.user.timezone, lastWeek);
+  const review = await generateWeeklyReviewForUser({
+    userId: req.user._id,
+    start,
+    end,
   });
-
-  const deepwork = await Deepwork.aggregate([
-    {
-      $match: {
-        user: req.user._id,
-        isActive: false,
-        date: { $gte: start, $lt: end },
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        total: { $sum: "$durationMinutes" },
-      },
-    },
-  ]);
-
-  const failureCount = await Failure.countDocuments({
-    user: req.user._id,
-    date: { $gte: start, $lt: end },
-  });
-
-  const review = await WeekReview.findOneAndUpdate(
-    { user: req.user._id, weekStartDate: start },
-    {
-      goalsCompleted,
-      deepworkMinutes: deepwork[0]?.total || 0,
-      failureCount,
-      summary: `Completed ${goalsCompleted} goals, ${deepwork[0]?.total || 0} minutes deepwork, ${failureCount} failed days.`,
-    },
-    { upsert: true, new: true },
-  );
 
   return res
     .status(200)

@@ -7,7 +7,7 @@ import { nowTime } from "../utils/getTodayDateTime.js";
 import { getWeekRange } from "../utils/getWeekRange.js";
 
 const startDeepwork = asyncHandler(async (req, res) => {
-  const today = getTodayDate();
+  const today = getTodayDate(req.user.timezone);
 
   let deepworkSession;
   try {
@@ -85,7 +85,7 @@ const endDeepwork = asyncHandler(async (req, res) => {
 });
 
 const getTodayDeepwork = asyncHandler(async (req, res) => {
-  const today = getTodayDate();
+  const today = getTodayDate(req.user.timezone);
 
   const stats = await Deepwork.aggregate([
     {
@@ -123,7 +123,7 @@ const getTodayDeepwork = asyncHandler(async (req, res) => {
 
 
 const getWeeklyDeepworkSummary = asyncHandler(async (req, res) => {
-  const { start, end } = getWeekRange();
+  const { start, end } = getWeekRange(req.user.timezone);
 
   const stats = await Deepwork.aggregate([
     {

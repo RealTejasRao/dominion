@@ -15,7 +15,7 @@ const addGoal = asyncHandler(async (req, res) => {
     );
   }
 
-  const today = getTodayDate();
+  const today = getTodayDate(req.user.timezone);
 
   const session = await Goal.startSession();
 
@@ -73,7 +73,7 @@ const addGoal = asyncHandler(async (req, res) => {
 });
 
 const getTodayGoals = asyncHandler(async (req, res) => {
-  const today = getTodayDate();
+  const today = getTodayDate(req.user.timezone);
 
   const goals = await Goal.find(
     {
@@ -105,7 +105,7 @@ const getTodayGoals = asyncHandler(async (req, res) => {
 });
 
 const completeGoal = asyncHandler(async (req, res) => {
-  const today = getTodayDate();
+  const today = getTodayDate(req.user.timezone);
 
   const { id: goalID } = req.params;
 
@@ -144,7 +144,7 @@ const completeGoal = asyncHandler(async (req, res) => {
 });
 
 const deleteGoal = asyncHandler(async (req, res) => {
-  const today = getTodayDate();
+  const today = getTodayDate(req.user.timezone);
 
   const { id: goalID } = req.params;
 
@@ -168,7 +168,7 @@ const deleteGoal = asyncHandler(async (req, res) => {
 const updateGoal = asyncHandler(async (req, res) => {
   const { title } = req.body;
   const { id: goalID } = req.params;
-  const today = getTodayDate();
+  const today = getTodayDate(req.user.timezone);
 
   if (!title || title.trim().length < 3) {
     throw new ApiError(400, "Goal title must be at least 3 characters long.");

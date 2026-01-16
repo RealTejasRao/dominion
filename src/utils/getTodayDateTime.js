@@ -1,7 +1,24 @@
-export const getTodayDate = () => {
-  const now = new Date();
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 10);
+import { DateTime } from "luxon";
+import { ApiError } from "./api-error.js";
+
+export const getTodayDate = (timezone) => {
+  const dt = DateTime.now().setZone(timezone);
+
+  if (!dt.isValid) {
+    throw new ApiError(400, "Invalid timezone");
+  }
+
+  return dt.toISODate();
+};
+
+export const getYesterdayDate = (timezone) => {
+  const dt = DateTime.now().setZone(timezone);
+
+  if (!dt.isValid) {
+    throw new ApiError(400, "Invalid timezone");
+  }
+
+  return dt.minus({ days: 1 }).toISODate(); // YYYY-MM-DD
 };
 
 export const nowTime = () => {

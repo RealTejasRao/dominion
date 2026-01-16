@@ -1,18 +1,20 @@
-export const getWeekRange = () => {
-  const now = new Date();
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+import { DateTime } from "luxon";
+import { ApiError } from "./api-error.js";
 
-  const day = local.getDay(); // 0 = Sun
-  const diff = local.getDate() - day + (day === 0 ? -6 : 1); // Monday start
+export const getWeekRange = (timezone, baseDate = null) => {
+  const now = baseDate
+    ? baseDate.setZone(timezone)
+    : DateTime.now().setZone(timezone);
 
-  const weekStart = new Date(local.setDate(diff));
-  weekStart.setHours(0, 0, 0, 0);
+  if (!now.isValid) {
+    throw new ApiError(400, "Invalid timezone");
+  }
 
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 7);
+  const weekStart = now.startOf("week");
+  const weekEnd = weekStart.plus({ days: 7 });
 
   return {
-    start: weekStart.toISOString().slice(0, 10),
-    end: weekEnd.toISOString().slice(0, 10),
+    start: weekStart.toISODate(),
+    end: weekEnd.toISODate(),
   };
 };

@@ -11,7 +11,7 @@ const userSchema = new Schema(
         default: `https://placehold.co/200x200`,
       },
       localPath: {
-        type: String, 
+        type: String,
         default: "",
       },
     },
@@ -58,6 +58,11 @@ const userSchema = new Schema(
     emailVerificationExpiry: {
       type: Date,
     },
+    timezone: {
+      type: String,
+      default: "UTC",
+      index: true,
+    },
   },
   {
     timestamps: true, //adds createdAt and updatedAt fields
@@ -69,7 +74,6 @@ userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 10);
 });
-
 
 userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
