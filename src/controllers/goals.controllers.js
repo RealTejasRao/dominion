@@ -21,15 +21,23 @@ const addGoal = asyncHandler(async (req, res) => {
 
   try {
     session.startTransaction();
-    const count = await DailyCounter.findOneAndUpdate(
-      {
-        user: req.user._id,
-        date: today,
-        goalCount: { $lt: 5 },
-      },
-      { $inc: { goalCount: 1 } },
-      { new: true, upsert: true, session },
-    );
+    let count;
+    try {
+      count = await DailyCounter.findOneAndUpdate(
+        {
+          user: req.user._id,
+          date: today,
+          goalCount: { $lt: 5 },
+        },
+        { $inc: { goalCount: 1 } },
+        { new: true, upsert: true, session },
+      );
+    } catch (err) {
+      if (err.code === 11000) {
+        throw new ApiError(400, "Max 5 goals are allowed.");
+      }
+      throw err;
+    }
 
     if (!count) {
       throw new ApiError(400, "Max 5 goals are allowed.");
