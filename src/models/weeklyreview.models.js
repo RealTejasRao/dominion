@@ -14,10 +14,15 @@ const weeklyReviewSchema = new Schema(
       required: true,
       index: true,
     },
+    weekEndDate: {
+      type: String,
+      required: true,
+      index: true,
+    },
     goalsCompleted: {
       type: Number,
       required: true,
-      default:0,
+      default: 0,
     },
     deepworkMinutes: {
       type: Number,

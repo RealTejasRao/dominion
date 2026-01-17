@@ -5,7 +5,6 @@ import Failure from "../models/failure.models.js";
 import { ApiError } from "../utils/api-error.js";
 
 export const generateWeeklyReviewForUser = async ({ userId, start, end }) => {
-
   const existing = await WeekReview.findOne({
     user: userId,
     weekStartDate: start,
@@ -47,6 +46,7 @@ export const generateWeeklyReviewForUser = async ({ userId, start, end }) => {
   const review = await WeekReview.create({
     user: userId,
     weekStartDate: start,
+    weekEndDate: end,
     goalsCompleted,
     deepworkMinutes,
     failureCount,
